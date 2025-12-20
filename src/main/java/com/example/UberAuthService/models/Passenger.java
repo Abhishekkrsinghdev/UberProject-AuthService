@@ -20,7 +20,7 @@ public class Passenger extends BaseModel {
     @Column(nullable = false)
     private String phoneNumber;
 
-    @Column(nullable = false)
+    @Column(nullable = false)//make unique
     private String email;
 
     @Column(nullable = false)
