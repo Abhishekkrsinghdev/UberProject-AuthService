@@ -16,14 +16,14 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtService implements CommandLineRunner {
+public class JwtService{
     @Value("${jwt.expiry}")
     private int expiry;
 
     @Value("${jwt.secret}")
     private String SECRET;
 
-    private String createToken(Map<String,Object> payload,String email){
+    public String createToken(Map<String,Object> payload,String email){
         Date now = new Date();
         Date expiryDate=new Date(now.getTime()+expiry*1000L);
         return Jwts.builder()
@@ -35,7 +35,11 @@ public class JwtService implements CommandLineRunner {
                 .compact();
     }
 
-    private Claims extractAllPayloads(String token){
+    public String createToken(String email){
+        return  createToken(new HashMap<>(),email);
+    }
+
+    public Claims extractAllPayloads(String token){
         return Jwts
                 .parser()
                 .verifyWith(getSignKey())
@@ -44,45 +48,36 @@ public class JwtService implements CommandLineRunner {
                 .getPayload();
     }
 
-    private <T> T extractClaim(String token,Function<Claims,T> claimResolver){
+    public <T> T extractClaim(String token,Function<Claims,T> claimResolver){
         final Claims claims=extractAllPayloads(token);
         return claimResolver.apply(claims);
     }
 
-    private Date extractExpiration(String token){
+    public Date extractExpiration(String token){
         return extractClaim(token,Claims::getExpiration);
     }
 
-    private Boolean isTokenExpired(String token){
+    public Boolean isTokenExpired(String token){
        return extractExpiration(token).before(new Date());
     }
 
-    private String extractEmail(String token){
+    public String extractEmail(String token){
         return extractClaim(token,Claims::getSubject);
     }
 
-    private Object extractPayload(String token,String payloadKey){
+    public Object extractPayload(String token,String payloadKey){
         Claims claim=extractAllPayloads(token);
         return (Object) claim.get(payloadKey);
     }
 
-    private SecretKey getSignKey(){
+    public SecretKey getSignKey(){
         return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
     }
 
-    private Boolean validateToken(String token,String email){
+    public Boolean validateToken(String token,String email){
         final String userEmailFetchedFromToken=extractEmail(token);
         return (userEmailFetchedFromToken.equals(email)) && !isTokenExpired(token);
     }
 
-    @Override
-    public void run(String... args) throws Exception {
-        Map<String,Object> mp=new HashMap<>();
-        mp.put("email","a@b.com");
-        mp.put("phoneNumber","99999999");
-        String result=createToken(mp,"abhishek");
-        System.out.println("Generated token is: " + result);
-        System.out.println("phone number is " + extractPayload(result,"phoneNumber").toString());
-        System.out.println("email is " + extractPayload(result,"email").toString());
-    }
+
 }
