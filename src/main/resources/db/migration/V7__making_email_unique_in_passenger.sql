@@ -1,0 +1,2 @@
+ALTER TABLE passenger
+    MODIFY email VARCHAR(255) UNIQUE;
