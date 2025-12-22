@@ -1,6 +1,6 @@
 package com.example.UberAuthService.configurations;
 
-import com.example.UberAuthService.services.UserDetailsServiceImpl;
+import com.example.UberAuthService.filters.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -20,30 +21,25 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableWebSecurity
 public class SpringSecurity implements WebMvcConfigurer {
     @Bean
-    public UserDetailsService userDetailsService(){
-        return new UserDetailsServiceImpl();
-    }
-
-    @Bean
-    public SecurityFilterChain filteringCriteria(HttpSecurity http) throws Exception{
+    public SecurityFilterChain filteringCriteria(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
         return http
-                .csrf(csrf-> csrf.disable())
-                .cors(cors->cors.disable())
-                .authorizeHttpRequests(auth->
-                     auth
-                         .requestMatchers("/api/v1/auth/signup/*").permitAll()
-                         .requestMatchers("/api/v1/auth/signin/*").permitAll()
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable())
+                .authorizeHttpRequests(auth ->
+                        auth
+                                .requestMatchers(
+                                        "/api/v1/auth/signup/**",
+                                        "/api/v1/auth/signin/**"
+                                ).permitAll()
+                                .anyRequest().authenticated()
                 )
-                .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; connect-src 'self' http://localhost:7475")
-                        ))
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){
-        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService());
+    public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService){
+        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider(userDetailsService);
         authenticationProvider.setPasswordEncoder(passwordEncoder());
         return authenticationProvider;
     }
