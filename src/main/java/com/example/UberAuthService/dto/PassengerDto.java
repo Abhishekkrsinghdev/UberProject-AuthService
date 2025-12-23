@@ -1,6 +1,6 @@
 package com.example.UberAuthService.dto;
 
-import com.example.UberAuthService.models.Passenger;
+import com.example.UberProject_EntityService.models.Passenger;
 import lombok.*;
 
 import java.time.LocalDateTime;
